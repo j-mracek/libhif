@@ -37,6 +37,7 @@
 #include "hy-goal-private.h"
 #include "dnf-goal.h"
 #include "dnf-package.h"
+#include "hy-package-private.h"
 #include "hy-packageset-private.h"
 #include "hy-iutil.h"
 #include "dnf-sack-private.h"
@@ -194,6 +195,31 @@ dnf_goal_add_protected(HyGoal goal, DnfPackageSet *pset)
         map_grow(protected, pool->nsolvables);
 
     map_or(protected, nprotected);
+}
+
+/**
+ * dnf_goal_add_favored:
+ * @goal: a #HyGoal.
+ * @pset: a #DnfPackageSet that would be added to the protected packages.
+ *
+ * Since: 0.9.4
+ */
+void
+dnf_goal_add_favored(HyGoal goal, DnfPackageSet *pset)
+{
+    Id id = -1;
+
+    if (goal->favored == NULL)
+        goal->favored = dnf_packageset_clone(pset);
+
+    unsigned int count = dnf_packageset_count(pset);
+    for (unsigned int i = 0; i < count; ++i) {
+        id = dnf_packageset_get_pkgid(pset, i, id);
+        DnfPackage *pkg = dnf_package_new(goal->sack, id);
+        if (pkg == NULL)
+                continue;
+        dnf_packageset_add(goal->favored, pkg);
+    }
 }
 
 /**

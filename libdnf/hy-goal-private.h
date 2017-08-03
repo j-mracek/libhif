@@ -37,6 +37,7 @@ struct _HyGoal {
     DnfGoalActions actions;
     Map *protected;
     GPtrArray *removal_of_protected;
+    DnfPackageSet *favored;
 };
 
 int sltr2job(const HySelector sltr, Queue *job, int solver_action);

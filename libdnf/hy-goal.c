@@ -316,6 +316,15 @@ solve(HyGoal goal, Queue *job, DnfGoalActions flags,
         goal->trans = NULL;
     }
 
+    if (goal->favored) {
+        unsigned int count = dnf_packageset_count(goal->favored);
+        Id id = -1;
+        for (unsigned int i = 0; i < count; ++i) {
+            id = dnf_packageset_get_pkgid(goal->favored, i, id);
+            queue_push2(job, SOLVER_DISFAVOR|SOLVER_SOLVABLE, id);
+        }
+    }
+
     Solver *solv = init_solver(goal, flags);
     if (user_cb) {
         cb_tuple = (struct _SolutionCallback){goal, user_cb, user_cb_data};
@@ -709,6 +718,8 @@ hy_goal_clone(HyGoal goal)
     gn->protected = g_malloc0(sizeof(Map));
     if (goal->protected != NULL)
         map_init_clone(gn->protected, goal->protected);
+    if (goal->favored != NULL)
+        gn->favored = dnf_packageset_clone(goal->favored);
     gn->actions = goal->actions;
     g_ptr_array_unref(gn->removal_of_protected);
     gn->removal_of_protected = g_ptr_array_ref(goal->removal_of_protected);
@@ -734,6 +745,7 @@ hy_goal_free(HyGoal goal)
         solver_free(goal->solv);
     queue_free(&goal->staging);
     free_map_fully(goal->protected);
+    g_object_unref(goal->favored);
     g_ptr_array_unref(goal->removal_of_protected);
     g_free(goal);
 }

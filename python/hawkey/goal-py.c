@@ -402,6 +402,18 @@ add_protected(_GoalObject *self, PyObject *seq)
 }
 
 static PyObject *
+add_favored(_GoalObject *self, PyObject *seq)
+{
+    HyGoal goal = self->goal;
+    DnfPackageSet *pset = pyseq_to_packageset(seq, goal->sack);
+    if (pset == NULL)
+        return NULL;
+    dnf_goal_add_favored(goal, pset);
+    g_object_unref(pset);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 run(_GoalObject *self, PyObject *args, PyObject *kwds)
 {
     int flags = 0;
@@ -726,6 +738,8 @@ static struct PyMethodDef goal_methods[] = {
     {"__deepcopy__", (PyCFunction)deepcopy, METH_KEYWORDS|METH_VARARGS,
      NULL},
     {"add_protected", (PyCFunction)add_protected, METH_O,
+     NULL},
+    {"add_favored", (PyCFunction)add_favored, METH_O,
      NULL},
     {"distupgrade_all",        (PyCFunction)distupgrade_all,        METH_NOARGS,        NULL},
     {"distupgrade",                (PyCFunction)distupgrade,
