@@ -2165,7 +2165,7 @@ void readModuleMetadataFromRepo(const GPtrArray *repos, ModulePackageContainer &
             continue;
         std::string yamlContent = getFileContent(modules_fn);
 
-        auto modules = ModulePackageMaker::fromString(pool.get(), dnf_repo_get_repo(repo), yamlContent);
+        auto modules = ModulePackageMaker::fromString(pool, dnf_repo_get_repo(repo), yamlContent);
         createConflictsBetweenStreams(modules);
 
         modulePackages.add(modules);
@@ -2179,7 +2179,7 @@ void readModuleMetadataFromRepo(const GPtrArray *repos, ModulePackageContainer &
     }
     // TODO remove hard-coded path
     try {
-        createPlatformSolvable(pool.get(), "/etc/os-release", install_root, platformModule);
+        createPlatformSolvable(pool, "/etc/os-release", install_root, platformModule);
     } catch (const std::exception & except) {
         logger->critical("Detection of Platform Module failed: " + std::string(except.what()));
     }
@@ -2203,10 +2203,10 @@ static std::tuple<std::vector<std::string>, std::vector<std::string>> collectNev
 {
     std::vector<std::string> includeNEVRAs;
     std::vector<std::string> excludeNEVRAs;
-
     // TODO: turn into std::vector<const char *> to prevent unecessary conversion?
     for (const auto &module : modulePackageContainer.getModulePackages()) {
         auto artifacts = module->getArtifacts();
+        // TODO use Goal::listInstalls() to not requires filtering out Platform
         if (modulePackageContainer.isModuleActive(module->getId())) {
             copy(std::begin(artifacts), std::end(artifacts), std::back_inserter(includeNEVRAs));
         } else {
@@ -2294,8 +2294,7 @@ void dnf_sack_filter_modules(DnfSack *sack, GPtrArray *repos, const char *instal
     if (priv->moduleContainer) {
         delete priv->moduleContainer;
     }
-    priv->moduleContainer = new ModulePackageContainer(
-        std::shared_ptr<Pool>(pool_create(), &pool_free), priv->arch);
+    priv->moduleContainer = new ModulePackageContainer(priv->arch);
     ModuleDefaultsContainer moduleDefaults;
 
     readModuleMetadataFromRepo(repos, *priv->moduleContainer, moduleDefaults, install_root, platformModule);
