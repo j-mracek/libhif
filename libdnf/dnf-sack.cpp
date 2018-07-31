@@ -2155,7 +2155,6 @@ void readModuleMetadataFromRepo(DnfSack * sack, ModulePackageContainer * moduleP
     ModuleDefaultsContainer & moduleDefaults, const char * install_root,
     const char * platformModule)
 {
-    DnfSackPrivate *priv = GET_PRIVATE(sack);
     Pool * pool = dnf_sack_get_pool(sack);
     Repo * r;
     Id id;
@@ -2178,7 +2177,7 @@ void readModuleMetadataFromRepo(DnfSack * sack, ModulePackageContainer * moduleP
     modulePackages->createConflictsBetweenStreams();
     // TODO remove hard-coded path
     try {
-        modulePackages->addPlatformPackage("/etc/os-release", install_root, platformModule);
+        modulePackages->addPlatformPackage("/etc/os-release", platformModule);
     } catch (const std::exception & except) {
         logger->critical("Detection of Platform Module failed: " + std::string(except.what()));
     }
@@ -2284,6 +2283,9 @@ std::vector<std::shared_ptr<ModulePackage>> requiresModuleEnablement(DnfSack * s
 void dnf_sack_filter_modules(DnfSack * sack, DnfModulePackageContainer * moduleContainer,
     const char ** hotfixRepos, const char * install_root, const char * platformModule)
 {
+    if (!install_root) {
+        throw std::runtime_error("Installroot not provided");
+    }
     // TODO: remove hard-coded path
     g_autofree gchar *defaultsDirPath = g_build_filename(
         install_root, "/etc/dnf/modules.defaults.d/", NULL);
@@ -2293,7 +2295,7 @@ void dnf_sack_filter_modules(DnfSack * sack, DnfModulePackageContainer * moduleC
             delete priv->moduleContainer;
         }
         priv->moduleContainer = new ModulePackageContainer(dnf_sack_get_all_arch(sack),
-                                                           dnf_sack_get_arch(sack));
+            install_root, dnf_sack_get_arch(sack));
         moduleContainer = priv->moduleContainer;
     }
 
