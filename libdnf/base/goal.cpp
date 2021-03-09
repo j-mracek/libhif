@@ -642,6 +642,13 @@ Goal::Problem Goal::resolve(bool allow_erasing)
         protected_query.ifilter_name(sack::QueryCmp::EQ, protected_packages);
         p_impl->rpm_goal.add_protected_packages(*protected_query.p_impl);
     }
+
+    // Set installonly packages
+    {
+        auto installonly_packages = cfg_main.installonlypkgs().get_value();
+        p_impl->rpm_goal.set_installonly(installonly_packages);
+    }
+
     if (p_impl->rpm_goal.resolve()) {
         return Problem::SOLVER_ERROR;
     }
